@@ -18,7 +18,7 @@ option java_multiple_files = true;
 option java_package = "io.grpc.examples.helloworld";
 option java_outer_classname = "HelloWorldProto";
 
-import "nrpc.proto";
+import "nrpc/nrpc.proto";
 
 package helloworld;
 

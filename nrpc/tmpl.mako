@@ -4,7 +4,6 @@ import asyncio
 import nats.aio
 
 import nrpc
-import nrpc_pb2
 
 % for mod, alias in g.extra_imports():
 import ${mod} as ${alias}

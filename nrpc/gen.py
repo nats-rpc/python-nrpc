@@ -5,6 +5,8 @@ from . import nrpc_pb2 as nrpc
 from .tmpl import template
 from google.protobuf.compiler import plugin_pb2 as plugin
 
+PY2 = sys.version_info.major == 2
+
 
 class Generator:
     def __init__(self, request):
@@ -17,7 +19,10 @@ class Generator:
         return None
 
     def get_fd_mod(self, fd):
-        return os.path.splitext(fd.name)[0]
+        return os.path.splitext(fd.name)[0].replace("/", ".")+'_pb2'
+
+    def get_mod_alias(self, mod):
+        return mod.replace('_', '__').replace('.', '_dot_')
 
     def lookup_type(self, name):
         if not name.startswith('.'):
@@ -39,7 +44,7 @@ class Generator:
 
     def get_type(self, name):
         mod, tname = self.lookup_type(name)
-        return '%s.%s' % (mod, tname)
+        return '%s.%s' % (self.get_mod_alias(mod), tname)
 
     def extra_imports(self):
         pbmods = set()
@@ -48,7 +53,7 @@ class Generator:
                 for t in (md.input_type, md.output_type):
                     mod, _ = self.lookup_type(t)
                     pbmods.add(mod)
-        return [('%s_pb2' % x, x) for x in pbmods]
+        return [(x, self.get_mod_alias(x)) for x in pbmods]
 
     def get_pkg_subject(self, fd):
         if fd.options.HasExtension(nrpc.packageSubject):
@@ -116,7 +121,9 @@ class Generator:
 
 
 def main():
-    request = plugin.CodeGeneratorRequest.FromString(sys.stdin.buffer.read())
+    stdin = sys.stdin if PY2 else sys.stdin.buffer
+    stdout = sys.stdout if PY2 else sys.stdout.buffer
+    request = plugin.CodeGeneratorRequest.FromString(stdin.read())
     generator = Generator(request)
     response = generator.generate()
-    sys.stdout.buffer.write(response.SerializeToString())
+    stdout.write(response.SerializeToString())

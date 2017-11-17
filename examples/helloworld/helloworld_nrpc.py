@@ -4,9 +4,8 @@ import asyncio
 import nats.aio
 
 import nrpc
-import nrpc_pb2
 
-import helloworld_pb2 as helloworld
+import helloworld_pb2 as helloworld__pb2
 
 
 PKG_SUBJECT = 'helloworld'
@@ -21,7 +20,7 @@ Greeter_SUBJECT_PARAMS_COUNT = 0
 
 class GreeterHandler:
     methods = {
-        'SayHello': ('SayHello', 0, helloworld.HelloRequest),
+        'SayHello': ('SayHello', 0, helloworld__pb2.HelloRequest),
     }
 
     def __init__(self, nc, server):
@@ -72,4 +71,4 @@ class GreeterClient:
         rawRep = yield from self.nc.timed_request(subject, rawReq, 5)
         if rawRep.data[0] == 0:
             return nrpc_pb2.Error.FromString(rawRep.data[1:])
-        return helloworld.HelloReply.FromString(rawRep.data)
+        return helloworld__pb2.HelloReply.FromString(rawRep.data)

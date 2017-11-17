@@ -13,16 +13,16 @@ from google.protobuf import descriptor_pb2
 _sym_db = _symbol_database.Default()
 
 
-import nrpc_pb2 as nrpc__pb2
+from nrpc import nrpc_pb2 as nrpc_dot_nrpc__pb2
 
 
 DESCRIPTOR = _descriptor.FileDescriptor(
   name='helloworld.proto',
   package='helloworld',
   syntax='proto3',
-  serialized_pb=_b('\n\x10helloworld.proto\x12\nhelloworld\x1a\nnrpc.proto\"\x1c\n\x0cHelloRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\"E\n\nHelloReply\x12\x10\n\x06result\x18\x01 \x01(\tH\x00\x12\x1c\n\x05\x65rror\x18\x02 \x01(\x0b\x32\x0b.nrpc.ErrorH\x00\x42\x07\n\x05reply2I\n\x07Greeter\x12>\n\x08SayHello\x12\x18.helloworld.HelloRequest\x1a\x16.helloworld.HelloReply\"\x00\x42\x30\n\x1bio.grpc.examples.helloworldB\x0fHelloWorldProtoP\x01\x62\x06proto3')
+  serialized_pb=_b('\n\x10helloworld.proto\x12\nhelloworld\x1a\x0fnrpc/nrpc.proto\"\x1c\n\x0cHelloRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\"E\n\nHelloReply\x12\x10\n\x06result\x18\x01 \x01(\tH\x00\x12\x1c\n\x05\x65rror\x18\x02 \x01(\x0b\x32\x0b.nrpc.ErrorH\x00\x42\x07\n\x05reply2I\n\x07Greeter\x12>\n\x08SayHello\x12\x18.helloworld.HelloRequest\x1a\x16.helloworld.HelloReply\"\x00\x42\x30\n\x1bio.grpc.examples.helloworldB\x0fHelloWorldProtoP\x01\x62\x06proto3')
   ,
-  dependencies=[nrpc__pb2.DESCRIPTOR,])
+  dependencies=[nrpc_dot_nrpc__pb2.DESCRIPTOR,])
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 
@@ -54,8 +54,8 @@ _HELLOREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=44,
-  serialized_end=72,
+  serialized_start=49,
+  serialized_end=77,
 )
 
 
@@ -95,11 +95,11 @@ _HELLOREPLY = _descriptor.Descriptor(
       name='reply', full_name='helloworld.HelloReply.reply',
       index=0, containing_type=None, fields=[]),
   ],
-  serialized_start=74,
-  serialized_end=143,
+  serialized_start=79,
+  serialized_end=148,
 )
 
-_HELLOREPLY.fields_by_name['error'].message_type = nrpc__pb2._ERROR
+_HELLOREPLY.fields_by_name['error'].message_type = nrpc_dot_nrpc__pb2._ERROR
 _HELLOREPLY.oneofs_by_name['reply'].fields.append(
   _HELLOREPLY.fields_by_name['result'])
 _HELLOREPLY.fields_by_name['result'].containing_oneof = _HELLOREPLY.oneofs_by_name['reply']
