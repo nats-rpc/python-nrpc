@@ -18,7 +18,7 @@ def run(loop):
 
     h = helloworld_nrpc.GreeterHandler(nc, Server())
 
-    yield from nc.subscribe(h.subject, cb=h.handler)
+    yield from nc.subscribe(h.subject(), cb=h.handler)
 
     c = helloworld_nrpc.GreeterClient(nc)
 

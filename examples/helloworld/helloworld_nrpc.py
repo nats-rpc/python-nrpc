@@ -25,14 +25,12 @@ class GreeterHandler:
 
     def __init__(self, nc, server):
         self.nc = nc
-        self.subject = (
-            (PKG_SUBJECT + '.' if PKG_SUBJECT else '') +
-            '*.' * PKG_SUBJECT_PARAMS_COUNT +
-            Greeter_SUBJECT + '.' +
-            '*.' * Greeter_SUBJECT_PARAMS_COUNT +
-            '>'
-        )
         self.server = server
+
+    def subject(self, method='>'):
+        return '.'.join([
+            "helloworld", Greeter_SUBJECT, method
+        ])
 
     @asyncio.coroutine
     def handler(self, msg):

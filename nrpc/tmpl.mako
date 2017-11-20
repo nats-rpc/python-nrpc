@@ -30,14 +30,24 @@ class ${sd.name}Handler:
 
     def __init__(self, nc, server):
         self.nc = nc
-        self.subject = (
-            (PKG_SUBJECT + '.' if PKG_SUBJECT else '') +
-            '*.' * PKG_SUBJECT_PARAMS_COUNT +
-            ${sd.name}_SUBJECT + '.' +
-            '*.' * ${sd.name}_SUBJECT_PARAMS_COUNT +
-            '>'
-        )
         self.server = server
+
+    def subject(self, ${
+        ', '.join(
+            ["pkg_%s='*'" % p for p in g.get_pkg_params(fd)]
+            + ["svc_%s='*'" % p for p in g.get_svc_params(sd)]
+            + ["method='>'"]
+        )
+    }):
+        return '.'.join([
+            ${', '.join(
+                (['"%s"'%g.get_pkg_subject(fd)] if g.get_pkg_subject(fd) else [])
+                + ["pkg_%s" % p for p in g.get_pkg_params(fd)]
+                + [ sd.name+'_SUBJECT' ]
+                + ["svc_%s" % p for p in g.get_svc_params(sd)]
+                + ["method"]
+            )}
+        ])
 
     @asyncio.coroutine
     def handler(self, msg):
