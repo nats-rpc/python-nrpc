@@ -21,7 +21,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='nrpc/nrpc.proto',
   package='nrpc',
   syntax='proto3',
-  serialized_pb=_b('\n\x0fnrpc/nrpc.proto\x12\x04nrpc\x1a google/protobuf/descriptor.proto\"X\n\x05\x45rror\x12\x1e\n\x04type\x18\x01 \x01(\x0e\x32\x10.nrpc.Error.Type\x12\x0f\n\x07message\x18\x02 \x01(\t\"\x1e\n\x04Type\x12\n\n\x06\x43LIENT\x10\x00\x12\n\n\x06SERVER\x10\x01\"\x06\n\x04Void\"\x0b\n\tNoRequest\"\t\n\x07NoReply*$\n\x0bSubjectRule\x12\x08\n\x04\x43OPY\x10\x00\x12\x0b\n\x07TOLOWER\x10\x01:6\n\x0epackageSubject\x12\x1c.google.protobuf.FileOptions\x18\xd0\x86\x03 \x01(\t:<\n\x14packageSubjectParams\x12\x1c.google.protobuf.FileOptions\x18\xd1\x86\x03 \x03(\t:M\n\x12serviceSubjectRule\x12\x1c.google.protobuf.FileOptions\x18\xd2\x86\x03 \x01(\x0e\x32\x11.nrpc.SubjectRule:L\n\x11methodSubjectRule\x12\x1c.google.protobuf.FileOptions\x18\xd3\x86\x03 \x01(\x0e\x32\x11.nrpc.SubjectRule:9\n\x0eserviceSubject\x12\x1f.google.protobuf.ServiceOptions\x18\xb8\x8e\x03 \x01(\t:?\n\x14serviceSubjectParams\x12\x1f.google.protobuf.ServiceOptions\x18\xb9\x8e\x03 \x03(\t:7\n\rmethodSubject\x12\x1e.google.protobuf.MethodOptions\x18\xa0\x96\x03 \x01(\t:=\n\x13methodSubjectParams\x12\x1e.google.protobuf.MethodOptions\x18\xa1\x96\x03 \x03(\tB\x1bZ\x19github.com/rapidloop/nrpcb\x06proto3')
+  serialized_pb=_b('\n\x0fnrpc/nrpc.proto\x12\x04nrpc\x1a google/protobuf/descriptor.proto\"s\n\x05\x45rror\x12\x1e\n\x04type\x18\x01 \x01(\x0e\x32\x10.nrpc.Error.Type\x12\x0f\n\x07message\x18\x02 \x01(\t\x12\x10\n\x08msgCount\x18\x03 \x01(\r\"\'\n\x04Type\x12\n\n\x06\x43LIENT\x10\x00\x12\n\n\x06SERVER\x10\x01\x12\x07\n\x03\x45OS\x10\x03\"\x06\n\x04Void\"\x0b\n\tNoRequest\"\t\n\x07NoReply\"\x1d\n\tHeartBeat\x12\x10\n\x08lastbeat\x18\x01 \x01(\x08*$\n\x0bSubjectRule\x12\x08\n\x04\x43OPY\x10\x00\x12\x0b\n\x07TOLOWER\x10\x01:6\n\x0epackageSubject\x12\x1c.google.protobuf.FileOptions\x18\xd0\x86\x03 \x01(\t:<\n\x14packageSubjectParams\x12\x1c.google.protobuf.FileOptions\x18\xd1\x86\x03 \x03(\t:M\n\x12serviceSubjectRule\x12\x1c.google.protobuf.FileOptions\x18\xd2\x86\x03 \x01(\x0e\x32\x11.nrpc.SubjectRule:L\n\x11methodSubjectRule\x12\x1c.google.protobuf.FileOptions\x18\xd3\x86\x03 \x01(\x0e\x32\x11.nrpc.SubjectRule:9\n\x0eserviceSubject\x12\x1f.google.protobuf.ServiceOptions\x18\xb8\x8e\x03 \x01(\t:?\n\x14serviceSubjectParams\x12\x1f.google.protobuf.ServiceOptions\x18\xb9\x8e\x03 \x03(\t:7\n\rmethodSubject\x12\x1e.google.protobuf.MethodOptions\x18\xa0\x96\x03 \x01(\t:=\n\x13methodSubjectParams\x12\x1e.google.protobuf.MethodOptions\x18\xa1\x96\x03 \x03(\t:7\n\rstreamedReply\x12\x1e.google.protobuf.MethodOptions\x18\xa2\x96\x03 \x01(\x08\x42\x1bZ\x19github.com/rapidloop/nrpcb\x06proto3')
   ,
   dependencies=[google_dot_protobuf_dot_descriptor__pb2.DESCRIPTOR,])
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
@@ -43,8 +43,8 @@ _SUBJECTRULE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=181,
-  serialized_end=217,
+  serialized_start=239,
+  serialized_end=275,
 )
 _sym_db.RegisterEnumDescriptor(_SUBJECTRULE)
 
@@ -116,6 +116,14 @@ methodSubjectParams = _descriptor.FieldDescriptor(
   message_type=None, enum_type=None, containing_type=None,
   is_extension=True, extension_scope=None,
   options=None)
+STREAMEDREPLY_FIELD_NUMBER = 52002
+streamedReply = _descriptor.FieldDescriptor(
+  name='streamedReply', full_name='nrpc.streamedReply', index=8,
+  number=52002, type=8, cpp_type=7, label=1,
+  has_default_value=False, default_value=False,
+  message_type=None, enum_type=None, containing_type=None,
+  is_extension=True, extension_scope=None,
+  options=None)
 
 _ERROR_TYPE = _descriptor.EnumDescriptor(
   name='Type',
@@ -131,11 +139,15 @@ _ERROR_TYPE = _descriptor.EnumDescriptor(
       name='SERVER', index=1, number=1,
       options=None,
       type=None),
+    _descriptor.EnumValueDescriptor(
+      name='EOS', index=2, number=3,
+      options=None,
+      type=None),
   ],
   containing_type=None,
   options=None,
-  serialized_start=117,
-  serialized_end=147,
+  serialized_start=135,
+  serialized_end=174,
 )
 _sym_db.RegisterEnumDescriptor(_ERROR_TYPE)
 
@@ -161,6 +173,13 @@ _ERROR = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
+    _descriptor.FieldDescriptor(
+      name='msgCount', full_name='nrpc.Error.msgCount', index=2,
+      number=3, type=13, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
   ],
   extensions=[
   ],
@@ -175,7 +194,7 @@ _ERROR = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=59,
-  serialized_end=147,
+  serialized_end=174,
 )
 
 
@@ -198,8 +217,8 @@ _VOID = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=149,
-  serialized_end=155,
+  serialized_start=176,
+  serialized_end=182,
 )
 
 
@@ -222,8 +241,8 @@ _NOREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=157,
-  serialized_end=168,
+  serialized_start=184,
+  serialized_end=195,
 )
 
 
@@ -246,8 +265,39 @@ _NOREPLY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=170,
-  serialized_end=179,
+  serialized_start=197,
+  serialized_end=206,
+)
+
+
+_HEARTBEAT = _descriptor.Descriptor(
+  name='HeartBeat',
+  full_name='nrpc.HeartBeat',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='lastbeat', full_name='nrpc.HeartBeat.lastbeat', index=0,
+      number=1, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=208,
+  serialized_end=237,
 )
 
 _ERROR.fields_by_name['type'].enum_type = _ERROR_TYPE
@@ -256,6 +306,7 @@ DESCRIPTOR.message_types_by_name['Error'] = _ERROR
 DESCRIPTOR.message_types_by_name['Void'] = _VOID
 DESCRIPTOR.message_types_by_name['NoRequest'] = _NOREQUEST
 DESCRIPTOR.message_types_by_name['NoReply'] = _NOREPLY
+DESCRIPTOR.message_types_by_name['HeartBeat'] = _HEARTBEAT
 DESCRIPTOR.enum_types_by_name['SubjectRule'] = _SUBJECTRULE
 DESCRIPTOR.extensions_by_name['packageSubject'] = packageSubject
 DESCRIPTOR.extensions_by_name['packageSubjectParams'] = packageSubjectParams
@@ -265,6 +316,7 @@ DESCRIPTOR.extensions_by_name['serviceSubject'] = serviceSubject
 DESCRIPTOR.extensions_by_name['serviceSubjectParams'] = serviceSubjectParams
 DESCRIPTOR.extensions_by_name['methodSubject'] = methodSubject
 DESCRIPTOR.extensions_by_name['methodSubjectParams'] = methodSubjectParams
+DESCRIPTOR.extensions_by_name['streamedReply'] = streamedReply
 
 Error = _reflection.GeneratedProtocolMessageType('Error', (_message.Message,), dict(
   DESCRIPTOR = _ERROR,
@@ -294,6 +346,13 @@ NoReply = _reflection.GeneratedProtocolMessageType('NoReply', (_message.Message,
   ))
 _sym_db.RegisterMessage(NoReply)
 
+HeartBeat = _reflection.GeneratedProtocolMessageType('HeartBeat', (_message.Message,), dict(
+  DESCRIPTOR = _HEARTBEAT,
+  __module__ = 'nrpc.nrpc_pb2'
+  # @@protoc_insertion_point(class_scope:nrpc.HeartBeat)
+  ))
+_sym_db.RegisterMessage(HeartBeat)
+
 google_dot_protobuf_dot_descriptor__pb2.FileOptions.RegisterExtension(packageSubject)
 google_dot_protobuf_dot_descriptor__pb2.FileOptions.RegisterExtension(packageSubjectParams)
 serviceSubjectRule.enum_type = _SUBJECTRULE
@@ -304,6 +363,7 @@ google_dot_protobuf_dot_descriptor__pb2.ServiceOptions.RegisterExtension(service
 google_dot_protobuf_dot_descriptor__pb2.ServiceOptions.RegisterExtension(serviceSubjectParams)
 google_dot_protobuf_dot_descriptor__pb2.MethodOptions.RegisterExtension(methodSubject)
 google_dot_protobuf_dot_descriptor__pb2.MethodOptions.RegisterExtension(methodSubjectParams)
+google_dot_protobuf_dot_descriptor__pb2.MethodOptions.RegisterExtension(streamedReply)
 
 DESCRIPTOR.has_options = True
 DESCRIPTOR._options = _descriptor._ParseOptions(descriptor_pb2.FileOptions(), _b('Z\031github.com/rapidloop/nrpc'))
