@@ -63,11 +63,12 @@ class ${sd.name}Handler:
             req = input_type.FromString(msg.data)
             method = getattr(self.server, mname)
             mt_params.append(req)
-            rep = method(*mt_params)
+            rep = yield from method(*mt_params)
             rawRep = rep.SerializeToString()
             yield from self.nc.publish(msg.reply, rawRep)
         except Exception as e:
-            print("Error in handler:", e)
+            import traceback; traceback.print_exc()
+            print("Error in ${sd.name}.%s handler:" % mname, e)
 
 
 class ${sd.name}Client:
@@ -112,7 +113,7 @@ self.svc_${p} + '.' + \
 
         rawReq = req.SerializeToString()
         rawRep = yield from self.nc.timed_request(subject, rawReq, 5)
-        if rawRep.data[0] == 0:
+        if rawRep.data and rawRep.data[0] == 0:
             return nrpc_pb2.Error.FromString(rawRep.data[1:])
         return ${g.get_type(md.output_type)}.FromString(rawRep.data)
     % endfor
