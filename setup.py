@@ -30,4 +30,8 @@ setup(
     entry_points={"console_scripts": [
         "protoc-gen-pynrpc=nrpc.gen:main",
     ]},
+    requires=[
+        "protobuf",
+        "mako",
+    ]
 )
