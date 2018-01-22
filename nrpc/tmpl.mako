@@ -4,6 +4,8 @@ import asyncio
 import nats.aio
 
 import nrpc
+import nrpc.exc
+from nrpc import nrpc_pb2
 
 % for mod, alias in g.extra_imports():
 import ${mod} as ${alias}
@@ -63,8 +65,22 @@ class ${sd.name}Handler:
             req = input_type.FromString(msg.data)
             method = getattr(self.server, mname)
             mt_params.append(req)
-            rep = yield from method(*mt_params)
-            rawRep = rep.SerializeToString()
+            err = None
+            try:
+                rep = yield from method(*mt_params)
+            except nrpc.ClientError as e:
+                err = e.as_nrpc_error()
+            except Exception as e:
+                err = nrpc.exc.server_error(e)
+            else:
+                if isinstance(rep, nrpc.ClientError):
+                    err = rep
+            if err is not None:
+                rawRep = b'\x00' + err.SerializeToString()
+            elif rep is not None:
+                rawRep = rep.SerializeToString()
+            else:
+                rawRep = b''
             yield from self.nc.publish(msg.reply, rawRep)
         except Exception as e:
             import traceback; traceback.print_exc()
@@ -99,22 +115,29 @@ class ${sd.name}Client:
         req,
     ):
         subject = PKG_SUBJECT + '.' + \
-% for p in g.get_pkg_params(fd):
+        % for p in g.get_pkg_params(fd):
 self.pkg_${p} + '.' + \
-% endfor
+        % endfor
 ${sd.name}_SUBJECT + '.' + \
-% for p in g.get_svc_params(sd):
+        % for p in g.get_svc_params(sd):
 self.svc_${p} + '.' + \
-% endfor
+        % endfor
 '${g.get_mt_subject(md)}'\
-% for p in g.get_mt_params(md):
+        % for p in g.get_mt_params(md):
  + '.' + ${p}\
-% endfor
+        % endfor
 
         rawReq = req.SerializeToString()
         rawRep = yield from self.nc.timed_request(subject, rawReq, 5)
         if rawRep.data and rawRep.data[0] == 0:
-            return nrpc_pb2.Error.FromString(rawRep.data[1:])
+            raise nrpc.exc.from_error(
+                nrpc_pb2.Error.FromString(rawRep.data[1:]))
+        % if md.output_type == '.nrpc.Void':
+        if len(rawRep.data):
+            raise ValueError("Received a non-empty response")
+        return None
+        % else:
         return ${g.get_type(md.output_type)}.FromString(rawRep.data)
+        % endif
     % endfor
 % endfor # sd in fd.service

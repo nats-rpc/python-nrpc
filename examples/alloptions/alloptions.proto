@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package main;
+
+import "nrpc/nrpc.proto";
+
+option (nrpc.packageSubject) = "root";
+option (nrpc.packageSubjectParams) = "instance";
+
+option (nrpc.serviceSubjectRule) = TOLOWER;
+option (nrpc.methodSubjectRule) = TOLOWER;
+
+service SvcCustomSubject {
+    option (nrpc.serviceSubject) = 'custom_subject';
+
+    rpc MtSimpleReply(StringArg) returns (SimpleStringReply) {
+        option (nrpc.methodSubject) = "mt_simple_reply";
+    }
+    rpc MtVoidReply(StringArg) returns (nrpc.Void) {}
+    rpc MtNoRequest(nrpc.NoRequest) returns (SimpleStringReply) {}
+
+    rpc MtStreamedReply(StringArg) returns (SimpleStringReply) {
+        option (nrpc.streamedReply) = true;
+    }
+    rpc MtVoidReqStreamedReply(nrpc.Void) returns (SimpleStringReply) {
+        option (nrpc.streamedReply) = true;
+    }
+}
+
+service SvcSubjectParams {
+    option (nrpc.serviceSubjectParams) = "clientid";
+
+    rpc MtWithSubjectParams(nrpc.Void) returns (SimpleStringReply) {
+        option (nrpc.methodSubjectParams) = "mp1";
+        option (nrpc.methodSubjectParams) = "mp2";
+    }
+    rpc MtNoReply(nrpc.Void) returns (nrpc.NoReply) {}
+    rpc MtNoRequestWParams(nrpc.NoRequest) returns (SimpleStringReply) {
+        option (nrpc.methodSubjectParams) = "mp1";
+    }
+}
+
+service NoRequestService {
+    rpc MtNoRequest(nrpc.NoRequest) returns (SimpleStringReply) {}
+}
+
+message StringArg {
+    string arg1 = 1;
+}
+
+message SimpleStringReply {
+    string reply = 1;
+}
