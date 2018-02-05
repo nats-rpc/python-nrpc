@@ -26,7 +26,7 @@ ${sd.name}_SUBJECT_PARAMS_COUNT = ${len(g.get_svc_params(sd))}
 class ${sd.name}Handler:
     methods = {
     % for md in sd.method:
-        '${g.get_mt_subject(md)}': ('${md.name}', ${len(g.get_mt_params(md))}, ${g.get_type(md.input_type) if md.input_type != '.nrpc.Void' else 'None'}, ${md.output_type != '.nrpc.NoReply'}),
+        '${g.get_mt_subject(md)}': ('${md.name}', ${len(g.get_mt_params(md))}, ${g.get_type(md.input_type) if md.input_type != '.nrpc.Void' else 'None'}, ${md.output_type != '.nrpc.NoReply'}, ${md.output_type == '.nrpc.Void'}),
     % endfor
     }
 
@@ -59,7 +59,7 @@ class ${sd.name}Handler:
                 ${sd.name}_SUBJECT, ${sd.name}_SUBJECT_PARAMS_COUNT,
                 msg.subject)
 
-            mname, params_count, input_type, has_reply = self.methods[mt_subject]
+            mname, params_count, input_type, has_reply, void_reply = self.methods[mt_subject]
             mt_params, count = nrpc.parse_subject_tail(params_count, tail)
 
             method = getattr(self.server, mname)
@@ -76,6 +76,9 @@ class ${sd.name}Handler:
             else:
                 if isinstance(rep, nrpc.ClientError):
                     err = rep
+                elif void_reply and rep is not None:
+                    raise ValueError(
+                        "Method %s implementation should return None" % mname)
             if has_reply:
                 if err is not None:
                     rawRep = b'\x00' + err.SerializeToString()

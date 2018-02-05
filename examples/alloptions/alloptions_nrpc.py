@@ -23,11 +23,11 @@ SvcCustomSubject_SUBJECT_PARAMS_COUNT = 0
 
 class SvcCustomSubjectHandler:
     methods = {
-        'mt_simple_reply': ('MtSimpleReply', 0, alloptions__pb2.StringArg, True),
-        'mtvoidreply': ('MtVoidReply', 0, alloptions__pb2.StringArg, True),
-        'mtnorequest': ('MtNoRequest', 0, nrpc_dot_nrpc__pb2.NoRequest, True),
-        'mtstreamedreply': ('MtStreamedReply', 0, alloptions__pb2.StringArg, True),
-        'mtvoidreqstreamedreply': ('MtVoidReqStreamedReply', 0, None, True),
+        'mt_simple_reply': ('MtSimpleReply', 0, alloptions__pb2.StringArg, True, False),
+        'mtvoidreply': ('MtVoidReply', 0, alloptions__pb2.StringArg, True, True),
+        'mtnorequest': ('MtNoRequest', 0, nrpc_dot_nrpc__pb2.NoRequest, True, False),
+        'mtstreamedreply': ('MtStreamedReply', 0, alloptions__pb2.StringArg, True, False),
+        'mtvoidreqstreamedreply': ('MtVoidReqStreamedReply', 0, None, True, False),
     }
 
     def __init__(self, nc, server):
@@ -47,7 +47,7 @@ class SvcCustomSubjectHandler:
                 SvcCustomSubject_SUBJECT, SvcCustomSubject_SUBJECT_PARAMS_COUNT,
                 msg.subject)
 
-            mname, params_count, input_type, has_reply = self.methods[mt_subject]
+            mname, params_count, input_type, has_reply, void_reply = self.methods[mt_subject]
             mt_params, count = nrpc.parse_subject_tail(params_count, tail)
 
             method = getattr(self.server, mname)
@@ -64,6 +64,9 @@ class SvcCustomSubjectHandler:
             else:
                 if isinstance(rep, nrpc.ClientError):
                     err = rep
+                elif void_reply and rep is not None:
+                    raise ValueError(
+                        "Method %s implementation should return None" % mname)
             if has_reply:
                 if err is not None:
                     rawRep = b'\x00' + err.SerializeToString()
@@ -159,9 +162,9 @@ SvcSubjectParams_SUBJECT_PARAMS_COUNT = 1
 
 class SvcSubjectParamsHandler:
     methods = {
-        'mtwithsubjectparams': ('MtWithSubjectParams', 2, None, True),
-        'mtnoreply': ('MtNoReply', 0, None, False),
-        'mtnorequestwparams': ('MtNoRequestWParams', 1, nrpc_dot_nrpc__pb2.NoRequest, True),
+        'mtwithsubjectparams': ('MtWithSubjectParams', 2, None, True, False),
+        'mtnoreply': ('MtNoReply', 0, None, False, False),
+        'mtnorequestwparams': ('MtNoRequestWParams', 1, nrpc_dot_nrpc__pb2.NoRequest, True, False),
     }
 
     def __init__(self, nc, server):
@@ -181,7 +184,7 @@ class SvcSubjectParamsHandler:
                 SvcSubjectParams_SUBJECT, SvcSubjectParams_SUBJECT_PARAMS_COUNT,
                 msg.subject)
 
-            mname, params_count, input_type, has_reply = self.methods[mt_subject]
+            mname, params_count, input_type, has_reply, void_reply = self.methods[mt_subject]
             mt_params, count = nrpc.parse_subject_tail(params_count, tail)
 
             method = getattr(self.server, mname)
@@ -198,6 +201,9 @@ class SvcSubjectParamsHandler:
             else:
                 if isinstance(rep, nrpc.ClientError):
                     err = rep
+                elif void_reply and rep is not None:
+                    raise ValueError(
+                        "Method %s implementation should return None" % mname)
             if has_reply:
                 if err is not None:
                     rawRep = b'\x00' + err.SerializeToString()
@@ -266,7 +272,7 @@ NoRequestService_SUBJECT_PARAMS_COUNT = 0
 
 class NoRequestServiceHandler:
     methods = {
-        'mtnorequest': ('MtNoRequest', 0, nrpc_dot_nrpc__pb2.NoRequest, True),
+        'mtnorequest': ('MtNoRequest', 0, nrpc_dot_nrpc__pb2.NoRequest, True, False),
     }
 
     def __init__(self, nc, server):
@@ -286,7 +292,7 @@ class NoRequestServiceHandler:
                 NoRequestService_SUBJECT, NoRequestService_SUBJECT_PARAMS_COUNT,
                 msg.subject)
 
-            mname, params_count, input_type, has_reply = self.methods[mt_subject]
+            mname, params_count, input_type, has_reply, void_reply = self.methods[mt_subject]
             mt_params, count = nrpc.parse_subject_tail(params_count, tail)
 
             method = getattr(self.server, mname)
@@ -303,6 +309,9 @@ class NoRequestServiceHandler:
             else:
                 if isinstance(rep, nrpc.ClientError):
                     err = rep
+                elif void_reply and rep is not None:
+                    raise ValueError(
+                        "Method %s implementation should return None" % mname)
             if has_reply:
                 if err is not None:
                     rawRep = b'\x00' + err.SerializeToString()
