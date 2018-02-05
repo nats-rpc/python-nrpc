@@ -26,7 +26,7 @@ ${sd.name}_SUBJECT_PARAMS_COUNT = ${len(g.get_svc_params(sd))}
 class ${sd.name}Handler:
     methods = {
     % for md in sd.method:
-        '${g.get_mt_subject(md)}': ('${md.name}', ${len(g.get_mt_params(md))}, ${g.get_type(md.input_type)}),
+        '${g.get_mt_subject(md)}': ('${md.name}', ${len(g.get_mt_params(md))}, ${g.get_type(md.input_type) if md.input_type != '.nrpc.Void' else 'None'}, ${md.output_type != '.nrpc.NoReply'}),
     % endfor
     }
 
@@ -59,12 +59,13 @@ class ${sd.name}Handler:
                 ${sd.name}_SUBJECT, ${sd.name}_SUBJECT_PARAMS_COUNT,
                 msg.subject)
 
-            mname, params_count, input_type = self.methods[mt_subject]
+            mname, params_count, input_type, has_reply = self.methods[mt_subject]
             mt_params, count = nrpc.parse_subject_tail(params_count, tail)
 
-            req = input_type.FromString(msg.data)
             method = getattr(self.server, mname)
-            mt_params.append(req)
+            if input_type is not None:
+                req = input_type.FromString(msg.data)
+                mt_params.append(req)
             err = None
             try:
                 rep = yield from method(*mt_params)
@@ -75,13 +76,14 @@ class ${sd.name}Handler:
             else:
                 if isinstance(rep, nrpc.ClientError):
                     err = rep
-            if err is not None:
-                rawRep = b'\x00' + err.SerializeToString()
-            elif rep is not None:
-                rawRep = rep.SerializeToString()
-            else:
-                rawRep = b''
-            yield from self.nc.publish(msg.reply, rawRep)
+            if has_reply:
+                if err is not None:
+                    rawRep = b'\x00' + err.SerializeToString()
+                elif rep is not None:
+                    rawRep = rep.SerializeToString()
+                else:
+                    rawRep = b''
+                yield from self.nc.publish(msg.reply, rawRep)
         except Exception as e:
             import traceback; traceback.print_exc()
             print("Error in ${sd.name}.%s handler:" % mname, e)
@@ -112,7 +114,9 @@ class ${sd.name}Client:
         % for p in g.get_mt_params(md):
         ${p},
         % endfor
+        % if md.input_type != '.nrpc.Void':
         req,
+        % endif
     ):
         subject = PKG_SUBJECT + '.' + \
         % for p in g.get_pkg_params(fd):
@@ -127,7 +131,12 @@ self.svc_${p} + '.' + \
  + '.' + ${p}\
         % endfor
 
+        % if md.input_type != '.nrpc.Void':
         rawReq = req.SerializeToString()
+        % else:
+        rawReq = b''
+        % endif
+        % if md.output_type != '.nrpc.NoReply':
         rawRep = yield from self.nc.timed_request(subject, rawReq, 5)
         if rawRep.data and rawRep.data[0] == 0:
             raise nrpc.exc.from_error(
@@ -138,6 +147,10 @@ self.svc_${p} + '.' + \
         return None
         % else:
         return ${g.get_type(md.output_type)}.FromString(rawRep.data)
+        % endif
+        % else:
+        print(subject)
+        yield from self.nc.publish(subject, rawReq)
         % endif
     % endfor
 % endfor # sd in fd.service

@@ -33,5 +33,6 @@ setup(
     install_requires=[
         "protobuf",
         "mako",
+        "asyncio-nats-client",
     ]
 )
