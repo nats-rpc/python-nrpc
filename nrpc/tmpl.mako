@@ -26,7 +26,7 @@ ${sd.name}_SUBJECT_PARAMS_COUNT = ${len(g.get_svc_params(sd))}
 class ${sd.name}Handler:
     methods = {
     % for md in sd.method:
-        '${g.get_mt_subject(md)}': ('${md.name}', ${len(g.get_mt_params(md))}, ${g.get_type(md.input_type) if md.input_type != '.nrpc.Void' else 'None'}, ${md.output_type != '.nrpc.NoReply'}, ${md.output_type == '.nrpc.Void'}),
+        '${g.get_mt_subject(md)}': ('${md.name}', ${len(g.get_mt_params(md))}, ${g.get_type(md.input_type) if md.input_type != '.nrpc.Void' else 'None'}, ${md.output_type != '.nrpc.NoReply'}, ${md.output_type == '.nrpc.Void'}, ${g.mt_has_streamed_reply(md)}),
     % endfor
     }
 
@@ -59,7 +59,7 @@ class ${sd.name}Handler:
                 ${sd.name}_SUBJECT, ${sd.name}_SUBJECT_PARAMS_COUNT,
                 msg.subject)
 
-            mname, params_count, input_type, has_reply, void_reply = self.methods[mt_subject]
+            mname, params_count, input_type, has_reply, void_reply, streamed_reply = self.methods[mt_subject]
             mt_params, count = nrpc.parse_subject_tail(params_count, tail)
 
             method = getattr(self.server, mname)
@@ -67,6 +67,9 @@ class ${sd.name}Handler:
                 req = input_type.FromString(msg.data)
                 mt_params.append(req)
             err = None
+            if streamed_reply:
+                yield from nrpc.streamed_reply_handler(self.nc, msg.reply, method(*mt_params))
+                return
             try:
                 rep = yield from method(*mt_params)
             except nrpc.ClientError as e:
@@ -111,8 +114,7 @@ class ${sd.name}Client:
         % endfor
     % for md in sd.method:
 
-    @asyncio.coroutine
-    def ${md.name}(
+    async def ${md.name}(
         self,
         % for p in g.get_mt_params(md):
         ${p},
@@ -134,13 +136,25 @@ self.svc_${p} + '.' + \
  + '.' + ${p}\
         % endfor
 
-        % if md.input_type != '.nrpc.Void':
+      % if md.input_type != '.nrpc.Void':
         rawReq = req.SerializeToString()
-        % else:
+      % else:
         rawReq = b''
-        % endif
-        % if md.output_type != '.nrpc.NoReply':
-        rawRep = yield from self.nc.timed_request(subject, rawReq, 5)
+      % endif
+
+      % if md.output_type == '.nrpc.NoReply':
+        await self.nc.publish(subject, rawReq)
+      % elif g.mt_has_streamed_reply(md):
+        async for rawRep in nrpc.streamed_reply_request(self.nc, subject, rawReq, 5):
+            % if md.output_type == '.nrpc.Void':
+            if len(rawRep.data):
+                raise ValueError("Received a non-empty response")
+            yield None
+            % else:
+            yield ${g.get_type(md.output_type)}.FromString(rawRep.data)
+            % endif
+      % else:
+        rawRep = await self.nc.timed_request(subject, rawReq, 5)
         if rawRep.data and rawRep.data[0] == 0:
             raise nrpc.exc.from_error(
                 nrpc_pb2.Error.FromString(rawRep.data[1:]))
@@ -151,9 +165,6 @@ self.svc_${p} + '.' + \
         % else:
         return ${g.get_type(md.output_type)}.FromString(rawRep.data)
         % endif
-        % else:
-        print(subject)
-        yield from self.nc.publish(subject, rawReq)
-        % endif
+      % endif
     % endfor
 % endfor # sd in fd.service

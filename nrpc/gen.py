@@ -19,7 +19,7 @@ class Generator:
         return None
 
     def get_fd_mod(self, fd):
-        return os.path.splitext(fd.name)[0].replace("/", ".")+'_pb2'
+        return os.path.splitext(fd.name)[0].replace("/", ".") + '_pb2'
 
     def get_mod_alias(self, mod):
         return mod.replace('_', '__').replace('.', '_dot_')
@@ -27,8 +27,8 @@ class Generator:
     def lookup_type(self, name):
         if not name.startswith('.'):
             raise ValueError(
-                "lookup_type only accepts fully qualified names. Got '%s'"
-                % name)
+                "lookup_type only accepts fully qualified names. Got '%s'" %
+                name)
         path = name.lstrip('.').split('.')
         pkg = path
         fd = None
@@ -100,10 +100,15 @@ class Generator:
             return e
         return []
 
+    def mt_has_streamed_reply(self, md):
+        s = md.options.Extensions[nrpc.streamedReply]
+        if s:
+            return s
+        return False
+
     def get_fd(self, name):
-        return next(
-            (fd for fd in self.request.proto_file if fd.name == name),
-            None)
+        return next((fd for fd in self.request.proto_file if fd.name == name),
+                    None)
 
     def generate(self):
         response = plugin.CodeGeneratorResponse()
@@ -114,7 +119,8 @@ class Generator:
             try:
                 out_file = response.file.add()
                 out_file.name = os.path.splitext(self.fd.name)[0] + "_nrpc.py"
-                out_file.content = template.render(g=self, fd=self.fd, pbmod=pbmod)
+                out_file.content = template.render(
+                    g=self, fd=self.fd, pbmod=pbmod)
             finally:
                 self.fd = None
         return response

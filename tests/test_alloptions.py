@@ -1,9 +1,21 @@
 import asyncio
+import sys
+import os
+
+sys.path.append(
+    os.path.abspath(
+        os.path.join(
+            os.path.dirname(__file__),
+            "..",
+            "examples",
+            "alloptions",
+        )))
 
 from nats.aio.client import Client as NATS
 import pytest
 
 import nrpc
+
 import alloptions_nrpc
 import alloptions_pb2
 
@@ -35,11 +47,19 @@ class Server:
                 timeout,
             )
 
+    async def MtStreamedReply(self, req):
+        yield alloptions_pb2.SimpleStringReply(reply=req.arg1)
+        yield alloptions_pb2.SimpleStringReply(reply=req.arg1)
+
 
 @pytest.fixture(scope="session")
 def nats_server():
     import subprocess
-    p = subprocess.Popen(["gnatsd", "-p", "4242"])
+    p = subprocess.Popen([
+        "gnatsd",
+        "-p",
+        "4242",
+    ])
     try:
         yield p
     finally:
@@ -98,3 +118,10 @@ async def test_no_reply(event_loop, nats, server):
 
     await client.MtNoReply()
     await server.wait_for_reply_hit()
+
+
+@pytest.mark.asyncio
+async def test_streamed_reply(event_loop, nats, server):
+    client = alloptions_nrpc.SvcCustomSubjectClient(nats, "default")
+    async for r in client.MtStreamedReply(alloptions_pb2.StringArg(arg1="hi")):
+        assert r.reply == "hi"
