@@ -189,6 +189,8 @@ async def streamed_reply_handler(nc, inbox, async_gen):
     heartbeat_task = asyncio.ensure_future(
         heartbeat_listener(nc, heartbeat_subject, task.cancel))
 
+    msgCount = 0
+
     try:
         while True:
             try:
@@ -198,11 +200,14 @@ async def streamed_reply_handler(nc, inbox, async_gen):
                 if reply is EOQ:
                     reply = nrpc_pb2.Error()
                     reply.type = nrpc_pb2.Error.EOS
+                    reply.msgCount = msgCount
                 if isinstance(reply, nrpc.exc.NrpcError):
                     reply = reply.as_nrpc_error()
                 data = reply.SerializeToString()
                 if isinstance(reply, nrpc_pb2.Error):
                     data = b'\x00' + data
+                else:
+                    msgCount += 1
                 await nc.publish(inbox, data)
                 if isinstance(reply, nrpc_pb2.Error):
                     return
