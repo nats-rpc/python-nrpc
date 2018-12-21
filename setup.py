@@ -2,6 +2,9 @@ from setuptools import setup
 import distutils.cmd
 import subprocess
 
+with open("README.md", "r") as fh:
+    long_description = fh.read()
+
 
 class protoc(distutils.cmd.Command):
     user_options = []
@@ -15,9 +18,12 @@ class protoc(distutils.cmd.Command):
     def run(self):
         subprocess.check_call([
             "protoc",
-            "--proto_path", ".",
-            "--proto_path", "nrpc",
-            "--python_out", ".",
+            "--proto_path",
+            ".",
+            "--proto_path",
+            "nrpc",
+            "--python_out",
+            ".",
             "nrpc/nrpc.proto",
         ])
 
@@ -25,6 +31,8 @@ class protoc(distutils.cmd.Command):
 setup(
     name="python-nrpc",
     version="0.0.1",
+    description="A python code generator and lib for Nats RPC",
+    long_description=long_description,
     packages=["nrpc"],
     cmdclass={'protoc': protoc},
     entry_points={"console_scripts": [
@@ -34,5 +42,4 @@ setup(
         "protobuf",
         "mako",
         "asyncio-nats-client",
-    ]
-)
+    ])
