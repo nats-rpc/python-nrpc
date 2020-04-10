@@ -26,6 +26,8 @@ Run the tests:
 pytest
 ```
 
+If the template changed, you may need to run "gen.sh" in the ``examples/alloptions``
+directory.
 
 
 ### Generating protobuf files
