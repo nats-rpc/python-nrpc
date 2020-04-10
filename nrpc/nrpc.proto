@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package nrpc;
 
-option go_package = "github.com/rapidloop/nrpc";
+option go_package = "github.com/nats-rpc/nrpc";
 
 import "google/protobuf/descriptor.proto";
 
@@ -43,6 +43,7 @@ message Error {
         CLIENT = 0;
         SERVER = 1;
         EOS = 3;
+        SERVERTOOBUSY = 4;
     }
     Type type = 1;
     string message = 2;
