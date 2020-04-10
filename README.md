@@ -9,6 +9,26 @@ This package provides a protoc plugin to generate python code from
 
 ## Developer notes
 
+### Running tests
+
+Get a 'nats-server' binary in the PATH, you can get the latest release from
+https://github.com/nats-io/nats-server/releases.
+
+Install the test requirements:
+
+```bash
+pip install -r requirements-test.txt
+```
+
+Run the tests:
+
+```bash
+pytest
+```
+
+
+
+### Generating protobuf files
 
 For regenerating the nrpc protobuf files, make sure the protobuf is installed.
 

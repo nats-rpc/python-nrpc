@@ -33,6 +33,8 @@ class Server:
     def MtVoidReply(self, req):
         if req.arg1 == "please fail":
             raise nrpc.ClientError("failed as requested")
+        if req.arg1 == "you are too busy":
+            raise nrpc.exc.ServerTooBusy("I am too busy")
 
     async def MtNoReply(self):
         with await self.cond:
@@ -56,7 +58,7 @@ class Server:
 def nats_server():
     import subprocess
     p = subprocess.Popen([
-        "gnatsd",
+        "nats-server",
         "-p",
         "4242",
     ])
@@ -110,6 +112,16 @@ async def test_void_reply(event_loop, nats, server):
         assert e.message == "failed as requested"
     else:
         assert False, "No error received"
+
+
+@pytest.mark.asyncio
+async def test_server_too_busy(event_loop, nats, server):
+    client = alloptions_nrpc.SvcCustomSubjectClient(nats, "default")
+
+    with pytest.raises(nrpc.exc.ServerTooBusy) as excinfo:
+        await client.MtVoidReply(
+            alloptions_pb2.StringArg(arg1="you are too busy"))
+    assert excinfo.value.message == "I am too busy"
 
 
 @pytest.mark.asyncio

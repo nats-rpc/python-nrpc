@@ -72,7 +72,7 @@ class ${sd.name}Handler:
                 return
             try:
                 rep = yield from method(*mt_params)
-            except nrpc.ClientError as e:
+            except nrpc.exc.NrpcError as e:
                 err = e.as_nrpc_error()
             except Exception as e:
                 err = nrpc.exc.server_error(e)

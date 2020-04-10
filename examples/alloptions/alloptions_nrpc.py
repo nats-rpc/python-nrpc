@@ -7,8 +7,8 @@ import nrpc
 import nrpc.exc
 from nrpc import nrpc_pb2
 
-import nrpc.nrpc_pb2 as nrpc_dot_nrpc__pb2
 import alloptions_pb2 as alloptions__pb2
+import nrpc.nrpc_pb2 as nrpc_dot_nrpc__pb2
 
 
 PKG_SUBJECT = 'root'
@@ -60,7 +60,7 @@ class SvcCustomSubjectHandler:
                 return
             try:
                 rep = yield from method(*mt_params)
-            except nrpc.ClientError as e:
+            except nrpc.exc.NrpcError as e:
                 err = e.as_nrpc_error()
             except Exception as e:
                 err = nrpc.exc.server_error(e)
@@ -194,7 +194,7 @@ class SvcSubjectParamsHandler:
                 return
             try:
                 rep = yield from method(*mt_params)
-            except nrpc.ClientError as e:
+            except nrpc.exc.NrpcError as e:
                 err = e.as_nrpc_error()
             except Exception as e:
                 err = nrpc.exc.server_error(e)
@@ -304,7 +304,7 @@ class NoRequestServiceHandler:
                 return
             try:
                 rep = yield from method(*mt_params)
-            except nrpc.ClientError as e:
+            except nrpc.exc.NrpcError as e:
                 err = e.as_nrpc_error()
             except Exception as e:
                 err = nrpc.exc.server_error(e)
