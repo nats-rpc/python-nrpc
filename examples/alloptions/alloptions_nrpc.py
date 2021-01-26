@@ -7,8 +7,8 @@ import nrpc
 import nrpc.exc
 from nrpc import nrpc_pb2
 
-import alloptions_pb2 as alloptions__pb2
 import nrpc.nrpc_pb2 as nrpc_dot_nrpc__pb2
+import alloptions_pb2 as alloptions__pb2
 
 
 PKG_SUBJECT = 'root'
@@ -39,8 +39,7 @@ class SvcCustomSubjectHandler:
             "root", pkg_instance, SvcCustomSubject_SUBJECT, method
         ])
 
-    @asyncio.coroutine
-    def handler(self, msg):
+    async def handler(self, msg):
         try:
             pkg_params, svc_params, mt_subject, tail = nrpc.parse_subject(
                 PKG_SUBJECT, PKG_SUBJECT_PARAMS_COUNT,
@@ -56,10 +55,10 @@ class SvcCustomSubjectHandler:
                 mt_params.append(req)
             err = None
             if streamed_reply:
-                yield from nrpc.streamed_reply_handler(self.nc, msg.reply, method(*mt_params))
+                await nrpc.streamed_reply_handler(self.nc, msg.reply, method(*mt_params))
                 return
             try:
-                rep = yield from method(*mt_params)
+                rep = await method(*mt_params)
             except nrpc.exc.NrpcError as e:
                 err = e.as_nrpc_error()
             except Exception as e:
@@ -77,7 +76,7 @@ class SvcCustomSubjectHandler:
                     rawRep = rep.SerializeToString()
                 else:
                     rawRep = b''
-                yield from self.nc.publish(msg.reply, rawRep)
+                await self.nc.publish(msg.reply, rawRep)
         except Exception as e:
             import traceback; traceback.print_exc()
             print("Error in SvcCustomSubject.%s handler:" % mname, e)
@@ -173,8 +172,7 @@ class SvcSubjectParamsHandler:
             "root", pkg_instance, SvcSubjectParams_SUBJECT, svc_clientid, method
         ])
 
-    @asyncio.coroutine
-    def handler(self, msg):
+    async def handler(self, msg):
         try:
             pkg_params, svc_params, mt_subject, tail = nrpc.parse_subject(
                 PKG_SUBJECT, PKG_SUBJECT_PARAMS_COUNT,
@@ -190,10 +188,10 @@ class SvcSubjectParamsHandler:
                 mt_params.append(req)
             err = None
             if streamed_reply:
-                yield from nrpc.streamed_reply_handler(self.nc, msg.reply, method(*mt_params))
+                await nrpc.streamed_reply_handler(self.nc, msg.reply, method(*mt_params))
                 return
             try:
-                rep = yield from method(*mt_params)
+                rep = await method(*mt_params)
             except nrpc.exc.NrpcError as e:
                 err = e.as_nrpc_error()
             except Exception as e:
@@ -211,7 +209,7 @@ class SvcSubjectParamsHandler:
                     rawRep = rep.SerializeToString()
                 else:
                     rawRep = b''
-                yield from self.nc.publish(msg.reply, rawRep)
+                await self.nc.publish(msg.reply, rawRep)
         except Exception as e:
             import traceback; traceback.print_exc()
             print("Error in SvcSubjectParams.%s handler:" % mname, e)
@@ -283,8 +281,7 @@ class NoRequestServiceHandler:
             "root", pkg_instance, NoRequestService_SUBJECT, method
         ])
 
-    @asyncio.coroutine
-    def handler(self, msg):
+    async def handler(self, msg):
         try:
             pkg_params, svc_params, mt_subject, tail = nrpc.parse_subject(
                 PKG_SUBJECT, PKG_SUBJECT_PARAMS_COUNT,
@@ -300,10 +297,10 @@ class NoRequestServiceHandler:
                 mt_params.append(req)
             err = None
             if streamed_reply:
-                yield from nrpc.streamed_reply_handler(self.nc, msg.reply, method(*mt_params))
+                await nrpc.streamed_reply_handler(self.nc, msg.reply, method(*mt_params))
                 return
             try:
-                rep = yield from method(*mt_params)
+                rep = await method(*mt_params)
             except nrpc.exc.NrpcError as e:
                 err = e.as_nrpc_error()
             except Exception as e:
@@ -321,7 +318,7 @@ class NoRequestServiceHandler:
                     rawRep = rep.SerializeToString()
                 else:
                     rawRep = b''
-                yield from self.nc.publish(msg.reply, rawRep)
+                await self.nc.publish(msg.reply, rawRep)
         except Exception as e:
             import traceback; traceback.print_exc()
             print("Error in NoRequestService.%s handler:" % mname, e)

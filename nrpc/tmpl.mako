@@ -51,8 +51,7 @@ class ${sd.name}Handler:
             )}
         ])
 
-    @asyncio.coroutine
-    def handler(self, msg):
+    async def handler(self, msg):
         try:
             pkg_params, svc_params, mt_subject, tail = nrpc.parse_subject(
                 PKG_SUBJECT, PKG_SUBJECT_PARAMS_COUNT,
@@ -68,10 +67,10 @@ class ${sd.name}Handler:
                 mt_params.append(req)
             err = None
             if streamed_reply:
-                yield from nrpc.streamed_reply_handler(self.nc, msg.reply, method(*mt_params))
+                await nrpc.streamed_reply_handler(self.nc, msg.reply, method(*mt_params))
                 return
             try:
-                rep = yield from method(*mt_params)
+                rep = await method(*mt_params)
             except nrpc.exc.NrpcError as e:
                 err = e.as_nrpc_error()
             except Exception as e:
@@ -89,7 +88,7 @@ class ${sd.name}Handler:
                     rawRep = rep.SerializeToString()
                 else:
                     rawRep = b''
-                yield from self.nc.publish(msg.reply, rawRep)
+                await self.nc.publish(msg.reply, rawRep)
         except Exception as e:
             import traceback; traceback.print_exc()
             print("Error in ${sd.name}.%s handler:" % mname, e)

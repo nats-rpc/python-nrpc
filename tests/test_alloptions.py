@@ -9,7 +9,9 @@ sys.path.append(
             "..",
             "examples",
             "alloptions",
-        )))
+        )
+    )
+)
 
 from nats.aio.client import Client as NATS
 import pytest
@@ -25,12 +27,10 @@ class Server:
         self.cond = asyncio.Condition()
         self.noreply_hit = 0
 
-    @asyncio.coroutine
-    def MtSimpleReply(self, req):
+    async def MtSimpleReply(self, req):
         return alloptions_pb2.SimpleStringReply(reply=req.arg1)
 
-    @asyncio.coroutine
-    def MtVoidReply(self, req):
+    async def MtVoidReply(self, req):
         if req.arg1 == "please fail":
             raise nrpc.ClientError("failed as requested")
         if req.arg1 == "you are too busy":
@@ -45,7 +45,8 @@ class Server:
         with await self.cond:
             await asyncio.wait_for(
                 self.cond.wait_for(
-                    lambda: self.noreply_hit >= min_hit and self.noreply_hit),
+                    lambda: self.noreply_hit >= min_hit and self.noreply_hit
+                ),
                 timeout,
             )
 
@@ -57,11 +58,14 @@ class Server:
 @pytest.fixture(scope="session")
 def nats_server():
     import subprocess
-    p = subprocess.Popen([
-        "nats-server",
-        "-p",
-        "4242",
-    ])
+
+    p = subprocess.Popen(
+        [
+            "nats-server",
+            "-p",
+            "4242",
+        ]
+    )
     try:
         yield p
     finally:
@@ -106,8 +110,7 @@ async def test_void_reply(event_loop, nats, server):
     assert r is None
 
     try:
-        r = await client.MtVoidReply(
-            alloptions_pb2.StringArg(arg1="please fail"))
+        r = await client.MtVoidReply(alloptions_pb2.StringArg(arg1="please fail"))
     except nrpc.ClientError as e:
         assert e.message == "failed as requested"
     else:
@@ -119,8 +122,7 @@ async def test_server_too_busy(event_loop, nats, server):
     client = alloptions_nrpc.SvcCustomSubjectClient(nats, "default")
 
     with pytest.raises(nrpc.exc.ServerTooBusy) as excinfo:
-        await client.MtVoidReply(
-            alloptions_pb2.StringArg(arg1="you are too busy"))
+        await client.MtVoidReply(alloptions_pb2.StringArg(arg1="you are too busy"))
     assert excinfo.value.message == "I am too busy"
 
 
