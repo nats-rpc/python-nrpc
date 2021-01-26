@@ -38,6 +38,7 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     packages=["nrpc"],
+    package_data={"nrpc": ["*.mako"]},
     cmdclass={"protoc": protoc},
     entry_points={"console_scripts": ["protoc-gen-pynrpc=nrpc.gen:main"]},
     install_requires=["protobuf", "mako", "asyncio-nats-client"],
