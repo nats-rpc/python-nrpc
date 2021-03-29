@@ -19,39 +19,44 @@ class CanceledByClient(RuntimeError):
 
 
 def parse_subject(
-        package_subject,
-        package_params_count,
-        service_subject,
-        service_params_count,
-        subject,
+    package_subject,
+    package_params_count,
+    service_subject,
+    service_params_count,
+    subject,
 ):
-    package_subject = package_subject.split('.') if package_subject else []
-    service_subject = service_subject.split('.')
+    package_subject = package_subject.split(".") if package_subject else []
+    service_subject = service_subject.split(".")
 
-    minlen = len(package_subject) + package_params_count + \
-        len(service_subject) + service_params_count + 1
+    minlen = (
+        len(package_subject)
+        + package_params_count
+        + len(service_subject)
+        + service_params_count
+        + 1
+    )
 
-    tokens = subject.split('.')
+    tokens = subject.split(".")
 
     if len(tokens) < minlen:
         raise InvalidSubject(
-            "subject must contain %s tokens at least, got %s" % (minlen,
-                                                                 subject))
+            "subject must contain %s tokens at least, got %s" % (minlen, subject)
+        )
 
-    if tokens[:len(package_subject)] != package_subject:
-        raise InvalidSubject(
-            "subject should start with %s" % '.'.join(package_subject))
+    if tokens[: len(package_subject)] != package_subject:
+        raise InvalidSubject("subject should start with %s" % ".".join(package_subject))
 
-    tokens = tokens[len(package_subject):]
+    tokens = tokens[len(package_subject) :]
 
     package_params = tokens[:package_params_count]
     tokens = tokens[package_params_count:]
 
-    if tokens[:len(service_subject)] != service_subject:
-        raise InvalidSubject("subject should contain %s, got %s" %
-                             ('.'.join(service_subject), subject))
+    if tokens[: len(service_subject)] != service_subject:
+        raise InvalidSubject(
+            "subject should contain %s, got %s" % (".".join(service_subject), subject)
+        )
 
-    tokens = tokens[len(service_subject):]
+    tokens = tokens[len(service_subject) :]
 
     service_params = tokens[:service_params_count]
     tokens = tokens[service_params_count:]
@@ -76,7 +81,7 @@ def parse_subject_tail(method_params_count, tail):
 
 
 async def streamed_reply_request(nc, subject, req, timeout):
-    if hasattr(nc, 'next_inbox'):
+    if hasattr(nc, "next_inbox"):
         inbox = nc.next_inbox()
     else:
         next_inbox = INBOX_PREFIX[:]
@@ -93,8 +98,9 @@ async def streamed_reply_request(nc, subject, req, timeout):
     async def heartbeat():
         while True:
             await asyncio.sleep(1)
-            await nc.publish(heartbeat_subject,
-                             nrpc_pb2.HeartBeat().SerializeToString())
+            await nc.publish(
+                heartbeat_subject, nrpc_pb2.HeartBeat().SerializeToString()
+            )
 
     heartbeat_task = asyncio.ensure_future(heartbeat())
 
@@ -154,11 +160,11 @@ async def wrap_gen(nc, inbox, async_gen):
             await nc.publish(inbox, data)
         except asyncio.TimeoutError:
             # Send a keep-alive message
-            await nc.publish(inbox, b'\0')
+            await nc.publish(inbox, b"\0")
         except StopAsyncIteration:
             eos = nrpc_pb2.Error()
             eos.type = nrpc_pb2.Error.EOS
-            await nc.publish(inbox, b'\0' + eos.SerializeToString())
+            await nc.publish(inbox, b"\0" + eos.SerializeToString())
             return
 
 
@@ -187,7 +193,8 @@ async def streamed_reply_handler(nc, inbox, async_gen):
     task = asyncio.ensure_future(consume_generator())
 
     heartbeat_task = asyncio.ensure_future(
-        heartbeat_listener(nc, heartbeat_subject, task.cancel))
+        heartbeat_listener(nc, heartbeat_subject, task.cancel)
+    )
 
     msgCount = 0
 
@@ -205,14 +212,14 @@ async def streamed_reply_handler(nc, inbox, async_gen):
                     reply = reply.as_nrpc_error()
                 data = reply.SerializeToString()
                 if isinstance(reply, nrpc_pb2.Error):
-                    data = b'\x00' + data
+                    data = b"\x00" + data
                 else:
                     msgCount += 1
                 await nc.publish(inbox, data)
                 if isinstance(reply, nrpc_pb2.Error):
                     return
             except asyncio.TimeoutError:
-                await nc.publish(inbox, b'\x00')
+                await nc.publish(inbox, b"\x00")
 
     finally:
         task.cancel()
