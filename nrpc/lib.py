@@ -3,6 +3,7 @@ import asyncio
 from nats.aio.client import INBOX_PREFIX
 
 import nrpc.exc
+
 from . import nrpc_pb2
 
 
@@ -181,7 +182,7 @@ async def streamed_reply_handler(nc, inbox, async_gen):
         try:
             async for reply in async_gen:
                 await queue.put(reply)
-        except nrpc.ClientError as e:
+        except nrpc.exc.NrpcError as e:
             await queue.put(e)
         except asyncio.CancelledError as e:
             await queue.put(e)

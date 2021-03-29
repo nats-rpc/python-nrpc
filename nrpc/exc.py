@@ -8,6 +8,7 @@ class NrpcError(RuntimeError):
         self.message = message
 
     def as_nrpc_error(self):
+        print("as_nrpc_error", self.type_, str(self))
         return nrpc_pb2.Error(type=self.type_, message=str(self))
 
 
