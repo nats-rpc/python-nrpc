@@ -41,11 +41,14 @@ def parse_subject(
 
     if len(tokens) < minlen:
         raise InvalidSubject(
-            "subject must contain %s tokens at least, got %s" % (minlen, subject)
+            "subject must contain %s tokens at least, got %s"
+            % (minlen, subject)
         )
 
     if tokens[: len(package_subject)] != package_subject:
-        raise InvalidSubject("subject should start with %s" % ".".join(package_subject))
+        raise InvalidSubject(
+            "subject should start with %s" % ".".join(package_subject)
+        )
 
     tokens = tokens[len(package_subject) :]
 
@@ -54,7 +57,8 @@ def parse_subject(
 
     if tokens[: len(service_subject)] != service_subject:
         raise InvalidSubject(
-            "subject should contain %s, got %s" % (".".join(service_subject), subject)
+            "subject should contain %s, got %s"
+            % (".".join(service_subject), subject)
         )
 
     tokens = tokens[len(service_subject) :]
@@ -106,13 +110,11 @@ async def streamed_reply_request(nc, subject, req, timeout):
     heartbeat_task = asyncio.ensure_future(heartbeat())
 
     sid = await nc.subscribe(inbox, cb=handler)
-
     try:
         await nc.publish_request(subject, inbox, req)
 
         while True:
             msg = await asyncio.wait_for(msg_queue.get(), timeout)
-
             # Is it a keep-alive msg ?
             if len(msg.data) == 1 and msg.data[0] == 0:
                 continue
@@ -122,12 +124,16 @@ async def streamed_reply_request(nc, subject, req, timeout):
                 err = nrpc_pb2.Error.FromString(msg.data[1:])
                 if err.type == nrpc_pb2.Error.EOS:
                     return
-                raise Error
+                raise err
 
             yield msg
     finally:
         heartbeat_task.cancel()
         await nc.unsubscribe(sid)
+        try:
+            await heartbeat_task
+        except asyncio.CancelledError:
+            pass
 
 
 async def heartbeat_listener(nc, subject, oncancel):
@@ -136,7 +142,7 @@ async def heartbeat_listener(nc, subject, oncancel):
     def handler(msg):
         queue.put(msg)
 
-    sid = await nc.subscribe(nc, subject, handler)
+    sid = await nc.subscribe(subject, cb=handler)
 
     try:
         while True:
@@ -170,6 +176,7 @@ async def wrap_gen(nc, inbox, async_gen):
 
 
 async def streamed_reply_handler(nc, inbox, async_gen):
+    print("streamed_reply_handler")
     heartbeat_subject = inbox + ".heartbeat"
 
     err = None
@@ -225,3 +232,24 @@ async def streamed_reply_handler(nc, inbox, async_gen):
     finally:
         task.cancel()
         heartbeat_task.cancel()
+        failures = []
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
+        except Exception as e:
+            failures.add(e)
+        try:
+            await heartbeat_task
+        except asyncio.CancelledError:
+            pass
+        except Exception as e:
+            failures.add(e)
+
+        if len(failures) == 1:
+            raise failures[0]
+        if len(failures) != 0:
+            raise RuntimeError(
+                "caught multiple errors: "
+                + ", ".join(str(e) for e in failures)
+            )
