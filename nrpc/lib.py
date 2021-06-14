@@ -139,8 +139,8 @@ async def streamed_reply_request(nc, subject, req, timeout):
 async def heartbeat_listener(nc, subject, oncancel):
     queue = asyncio.Queue(1)
 
-    def handler(msg):
-        queue.put(msg)
+    async def handler(msg):
+        await queue.put(msg)
 
     sid = await nc.subscribe(subject, cb=handler)
 
@@ -149,7 +149,7 @@ async def heartbeat_listener(nc, subject, oncancel):
             try:
                 msg = await asyncio.wait_for(queue.get(), 2)
                 beat = nrpc_pb2.HeartBeat.FromString(msg.data)
-                if beat.last:
+                if beat.lastbeat:
                     oncancel()
                     return
             except asyncio.TimeoutError as e:
@@ -176,7 +176,6 @@ async def wrap_gen(nc, inbox, async_gen):
 
 
 async def streamed_reply_handler(nc, inbox, async_gen):
-    print("streamed_reply_handler")
     heartbeat_subject = inbox + ".heartbeat"
 
     err = None
@@ -238,13 +237,13 @@ async def streamed_reply_handler(nc, inbox, async_gen):
         except asyncio.CancelledError:
             pass
         except Exception as e:
-            failures.add(e)
+            failures.append(e)
         try:
             await heartbeat_task
         except asyncio.CancelledError:
             pass
         except Exception as e:
-            failures.add(e)
+            failures.append(e)
 
         if len(failures) == 1:
             raise failures[0]
