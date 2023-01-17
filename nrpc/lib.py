@@ -1,6 +1,6 @@
 import asyncio
 
-from nats.aio.client import INBOX_PREFIX
+from nats.aio.client import DEFAULT_INBOX_PREFIX as INBOX_PREFIX
 
 import nrpc.exc
 
@@ -41,14 +41,11 @@ def parse_subject(
 
     if len(tokens) < minlen:
         raise InvalidSubject(
-            "subject must contain %s tokens at least, got %s"
-            % (minlen, subject)
+            "subject must contain %s tokens at least, got %s" % (minlen, subject)
         )
 
     if tokens[: len(package_subject)] != package_subject:
-        raise InvalidSubject(
-            "subject should start with %s" % ".".join(package_subject)
-        )
+        raise InvalidSubject("subject should start with %s" % ".".join(package_subject))
 
     tokens = tokens[len(package_subject) :]
 
@@ -57,8 +54,7 @@ def parse_subject(
 
     if tokens[: len(service_subject)] != service_subject:
         raise InvalidSubject(
-            "subject should contain %s, got %s"
-            % (".".join(service_subject), subject)
+            "subject should contain %s, got %s" % (".".join(service_subject), subject)
         )
 
     tokens = tokens[len(service_subject) :]
@@ -249,6 +245,5 @@ async def streamed_reply_handler(nc, inbox, async_gen):
             raise failures[0]
         if len(failures) != 0:
             raise RuntimeError(
-                "caught multiple errors: "
-                + ", ".join(str(e) for e in failures)
+                "caught multiple errors: " + ", ".join(str(e) for e in failures)
             )
