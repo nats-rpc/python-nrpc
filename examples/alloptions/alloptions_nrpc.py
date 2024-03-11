@@ -7,82 +7,46 @@ import nrpc
 import nrpc.exc
 from nrpc import nrpc_pb2
 
-import nrpc.nrpc_pb2 as nrpc_dot_nrpc__pb2
 import alloptions_pb2 as alloptions__pb2
+import nrpc.nrpc_pb2 as nrpc_dot_nrpc__pb2
 
 
-PKG_SUBJECT = "root"
-PKG_SUBJECT_PARAMS = ["instance"]
+PKG_SUBJECT = 'root'
+PKG_SUBJECT_PARAMS = ['instance']
 PKG_SUBJECT_PARAMS_COUNT = 1
 
 
-SvcCustomSubject_SUBJECT = "custom_subject"
+SvcCustomSubject_SUBJECT = 'custom_subject'
 SvcCustomSubject_SUBJECT_PARAMS = []
 SvcCustomSubject_SUBJECT_PARAMS_COUNT = 0
 
 
 class SvcCustomSubjectHandler:
     methods = {
-        "mt_simple_reply": (
-            "MtSimpleReply",
-            0,
-            alloptions__pb2.StringArg,
-            True,
-            False,
-            False,
-        ),
-        "mtvoidreply": ("MtVoidReply", 0, alloptions__pb2.StringArg, True, True, False),
-        "mtnorequest": (
-            "MtNoRequest",
-            0,
-            nrpc_dot_nrpc__pb2.NoRequest,
-            True,
-            False,
-            False,
-        ),
-        "mtstreamedreply": (
-            "MtStreamedReply",
-            0,
-            alloptions__pb2.StringArg,
-            True,
-            False,
-            True,
-        ),
-        "mtvoidreqstreamedreply": (
-            "MtVoidReqStreamedReply",
-            0,
-            None,
-            True,
-            False,
-            True,
-        ),
+        'mt_simple_reply': ('MtSimpleReply', 0, alloptions__pb2.StringArg, True, False, False),
+        'mtvoidreply': ('MtVoidReply', 0, alloptions__pb2.StringArg, True, True, False),
+        'mtnorequest': ('MtNoRequest', 0, nrpc_dot_nrpc__pb2.NoRequest, True, False, False),
+        'mtstreamedreply': ('MtStreamedReply', 0, alloptions__pb2.StringArg, True, False, True),
+        'mtvoidreqstreamedreply': ('MtVoidReqStreamedReply', 0, None, True, False, True),
     }
 
     def __init__(self, nc, server):
         self.nc = nc
         self.server = server
 
-    def subject(self, pkg_instance="*", method=">"):
-        return ".".join(["root", pkg_instance, SvcCustomSubject_SUBJECT, method])
+    def subject(self, pkg_instance='*', method='>'):
+        return '.'.join([
+            "root", pkg_instance, SvcCustomSubject_SUBJECT, method
+        ])
 
     async def handler(self, msg):
         try:
             pkg_params, svc_params, mt_subject, tail = nrpc.parse_subject(
-                PKG_SUBJECT,
-                PKG_SUBJECT_PARAMS_COUNT,
-                SvcCustomSubject_SUBJECT,
-                SvcCustomSubject_SUBJECT_PARAMS_COUNT,
-                msg.subject,
-            )
+                PKG_SUBJECT, PKG_SUBJECT_PARAMS_COUNT,
+                SvcCustomSubject_SUBJECT, SvcCustomSubject_SUBJECT_PARAMS_COUNT,
+                msg.subject)
 
-            (
-                mname,
-                params_count,
-                input_type,
-                has_reply,
-                void_reply,
-                streamed_reply,
-            ) = self.methods[mt_subject]
+            mname, params_count, input_type, has_reply, void_reply, streamed_reply = self.methods[mt_subject]
             mt_params, count = nrpc.parse_subject_tail(params_count, tail)
 
             method = getattr(self.server, mname)
@@ -91,9 +55,7 @@ class SvcCustomSubjectHandler:
                 mt_params.append(req)
             err = None
             if streamed_reply:
-                await nrpc.streamed_reply_handler(
-                    self.nc, msg.reply, method(*mt_params)
-                )
+                await nrpc.streamed_reply_handler(self.nc, msg.reply, method(*mt_params))
                 return
             try:
                 rep = await method(*mt_params)
@@ -106,27 +68,23 @@ class SvcCustomSubjectHandler:
                     err = rep
                 elif void_reply and rep is not None:
                     raise ValueError(
-                        "Method %s implementation should return None" % mname
-                    )
+                        "Method %s implementation should return None" % mname)
             if has_reply:
                 if err is not None:
-                    rawRep = b"\x00" + err.SerializeToString()
+                    rawRep = b'\x00' + err.SerializeToString()
                 elif rep is not None:
                     rawRep = rep.SerializeToString()
                 else:
-                    rawRep = b""
+                    rawRep = b''
                 await self.nc.publish(msg.reply, rawRep)
         except Exception as e:
-            import traceback
-
-            traceback.print_exc()
+            import traceback; traceback.print_exc()
             print("Error in SvcCustomSubject.%s handler:" % mname, e)
 
 
 class SvcCustomSubjectClient:
     def __init__(
-        self,
-        nc,
+        self, nc,
         pkg_instance,
     ):
         self.nc = nc
@@ -136,40 +94,26 @@ class SvcCustomSubjectClient:
         self,
         req,
     ):
-        subject = (
-            PKG_SUBJECT
-            + "."
-            + self.pkg_instance
-            + "."
-            + SvcCustomSubject_SUBJECT
-            + "."
-            + "mt_simple_reply"
-        )
+        subject = PKG_SUBJECT + '.' + self.pkg_instance + '.' + SvcCustomSubject_SUBJECT + '.' + 'mt_simple_reply'
         rawReq = req.SerializeToString()
 
-        rawRep = await self.nc.timed_request(subject, rawReq, 5)
+        rawRep = await self.nc.request(subject, rawReq, timeout=5)
         if rawRep.data and rawRep.data[0] == 0:
-            raise nrpc.exc.from_error(nrpc_pb2.Error.FromString(rawRep.data[1:]))
+            raise nrpc.exc.from_error(
+                nrpc_pb2.Error.FromString(rawRep.data[1:]))
         return alloptions__pb2.SimpleStringReply.FromString(rawRep.data)
 
     async def MtVoidReply(
         self,
         req,
     ):
-        subject = (
-            PKG_SUBJECT
-            + "."
-            + self.pkg_instance
-            + "."
-            + SvcCustomSubject_SUBJECT
-            + "."
-            + "mtvoidreply"
-        )
+        subject = PKG_SUBJECT + '.' + self.pkg_instance + '.' + SvcCustomSubject_SUBJECT + '.' + 'mtvoidreply'
         rawReq = req.SerializeToString()
 
-        rawRep = await self.nc.timed_request(subject, rawReq, 5)
+        rawRep = await self.nc.request(subject, rawReq, timeout=5)
         if rawRep.data and rawRep.data[0] == 0:
-            raise nrpc.exc.from_error(nrpc_pb2.Error.FromString(rawRep.data[1:]))
+            raise nrpc.exc.from_error(
+                nrpc_pb2.Error.FromString(rawRep.data[1:]))
         if len(rawRep.data):
             raise ValueError("Received a non-empty response")
         return None
@@ -178,35 +122,20 @@ class SvcCustomSubjectClient:
         self,
         req,
     ):
-        subject = (
-            PKG_SUBJECT
-            + "."
-            + self.pkg_instance
-            + "."
-            + SvcCustomSubject_SUBJECT
-            + "."
-            + "mtnorequest"
-        )
+        subject = PKG_SUBJECT + '.' + self.pkg_instance + '.' + SvcCustomSubject_SUBJECT + '.' + 'mtnorequest'
         rawReq = req.SerializeToString()
 
-        rawRep = await self.nc.timed_request(subject, rawReq, 5)
+        rawRep = await self.nc.request(subject, rawReq, timeout=5)
         if rawRep.data and rawRep.data[0] == 0:
-            raise nrpc.exc.from_error(nrpc_pb2.Error.FromString(rawRep.data[1:]))
+            raise nrpc.exc.from_error(
+                nrpc_pb2.Error.FromString(rawRep.data[1:]))
         return alloptions__pb2.SimpleStringReply.FromString(rawRep.data)
 
     async def MtStreamedReply(
         self,
         req,
     ):
-        subject = (
-            PKG_SUBJECT
-            + "."
-            + self.pkg_instance
-            + "."
-            + SvcCustomSubject_SUBJECT
-            + "."
-            + "mtstreamedreply"
-        )
+        subject = PKG_SUBJECT + '.' + self.pkg_instance + '.' + SvcCustomSubject_SUBJECT + '.' + 'mtstreamedreply'
         rawReq = req.SerializeToString()
 
         async for rawRep in nrpc.streamed_reply_request(self.nc, subject, rawReq, 5):
@@ -215,67 +144,42 @@ class SvcCustomSubjectClient:
     async def MtVoidReqStreamedReply(
         self,
     ):
-        subject = (
-            PKG_SUBJECT
-            + "."
-            + self.pkg_instance
-            + "."
-            + SvcCustomSubject_SUBJECT
-            + "."
-            + "mtvoidreqstreamedreply"
-        )
-        rawReq = b""
+        subject = PKG_SUBJECT + '.' + self.pkg_instance + '.' + SvcCustomSubject_SUBJECT + '.' + 'mtvoidreqstreamedreply'
+        rawReq = b''
 
         async for rawRep in nrpc.streamed_reply_request(self.nc, subject, rawReq, 5):
             yield alloptions__pb2.SimpleStringReply.FromString(rawRep.data)
 
 
-SvcSubjectParams_SUBJECT = "svcsubjectparams"
-SvcSubjectParams_SUBJECT_PARAMS = ["clientid"]
+SvcSubjectParams_SUBJECT = 'svcsubjectparams'
+SvcSubjectParams_SUBJECT_PARAMS = ['clientid']
 SvcSubjectParams_SUBJECT_PARAMS_COUNT = 1
 
 
 class SvcSubjectParamsHandler:
     methods = {
-        "mtwithsubjectparams": ("MtWithSubjectParams", 2, None, True, False, False),
-        "mtnoreply": ("MtNoReply", 0, None, False, False, False),
-        "mtnorequestwparams": (
-            "MtNoRequestWParams",
-            1,
-            nrpc_dot_nrpc__pb2.NoRequest,
-            True,
-            False,
-            False,
-        ),
+        'mtwithsubjectparams': ('MtWithSubjectParams', 2, None, True, False, False),
+        'mtnoreply': ('MtNoReply', 0, None, False, False, False),
+        'mtnorequestwparams': ('MtNoRequestWParams', 1, nrpc_dot_nrpc__pb2.NoRequest, True, False, False),
     }
 
     def __init__(self, nc, server):
         self.nc = nc
         self.server = server
 
-    def subject(self, pkg_instance="*", svc_clientid="*", method=">"):
-        return ".".join(
-            ["root", pkg_instance, SvcSubjectParams_SUBJECT, svc_clientid, method]
-        )
+    def subject(self, pkg_instance='*', svc_clientid='*', method='>'):
+        return '.'.join([
+            "root", pkg_instance, SvcSubjectParams_SUBJECT, svc_clientid, method
+        ])
 
     async def handler(self, msg):
         try:
             pkg_params, svc_params, mt_subject, tail = nrpc.parse_subject(
-                PKG_SUBJECT,
-                PKG_SUBJECT_PARAMS_COUNT,
-                SvcSubjectParams_SUBJECT,
-                SvcSubjectParams_SUBJECT_PARAMS_COUNT,
-                msg.subject,
-            )
+                PKG_SUBJECT, PKG_SUBJECT_PARAMS_COUNT,
+                SvcSubjectParams_SUBJECT, SvcSubjectParams_SUBJECT_PARAMS_COUNT,
+                msg.subject)
 
-            (
-                mname,
-                params_count,
-                input_type,
-                has_reply,
-                void_reply,
-                streamed_reply,
-            ) = self.methods[mt_subject]
+            mname, params_count, input_type, has_reply, void_reply, streamed_reply = self.methods[mt_subject]
             mt_params, count = nrpc.parse_subject_tail(params_count, tail)
 
             method = getattr(self.server, mname)
@@ -284,9 +188,7 @@ class SvcSubjectParamsHandler:
                 mt_params.append(req)
             err = None
             if streamed_reply:
-                await nrpc.streamed_reply_handler(
-                    self.nc, msg.reply, method(*mt_params)
-                )
+                await nrpc.streamed_reply_handler(self.nc, msg.reply, method(*mt_params))
                 return
             try:
                 rep = await method(*mt_params)
@@ -299,27 +201,23 @@ class SvcSubjectParamsHandler:
                     err = rep
                 elif void_reply and rep is not None:
                     raise ValueError(
-                        "Method %s implementation should return None" % mname
-                    )
+                        "Method %s implementation should return None" % mname)
             if has_reply:
                 if err is not None:
-                    rawRep = b"\x00" + err.SerializeToString()
+                    rawRep = b'\x00' + err.SerializeToString()
                 elif rep is not None:
                     rawRep = rep.SerializeToString()
                 else:
-                    rawRep = b""
+                    rawRep = b''
                 await self.nc.publish(msg.reply, rawRep)
         except Exception as e:
-            import traceback
-
-            traceback.print_exc()
+            import traceback; traceback.print_exc()
             print("Error in SvcSubjectParams.%s handler:" % mname, e)
 
 
 class SvcSubjectParamsClient:
     def __init__(
-        self,
-        nc,
+        self, nc,
         pkg_instance,
         svc_clientid,
     ):
@@ -332,43 +230,20 @@ class SvcSubjectParamsClient:
         mp1,
         mp2,
     ):
-        subject = (
-            PKG_SUBJECT
-            + "."
-            + self.pkg_instance
-            + "."
-            + SvcSubjectParams_SUBJECT
-            + "."
-            + self.svc_clientid
-            + "."
-            + "mtwithsubjectparams"
-            + "."
-            + mp1
-            + "."
-            + mp2
-        )
-        rawReq = b""
+        subject = PKG_SUBJECT + '.' + self.pkg_instance + '.' + SvcSubjectParams_SUBJECT + '.' + self.svc_clientid + '.' + 'mtwithsubjectparams' + '.' + mp1 + '.' + mp2
+        rawReq = b''
 
-        rawRep = await self.nc.timed_request(subject, rawReq, 5)
+        rawRep = await self.nc.request(subject, rawReq, timeout=5)
         if rawRep.data and rawRep.data[0] == 0:
-            raise nrpc.exc.from_error(nrpc_pb2.Error.FromString(rawRep.data[1:]))
+            raise nrpc.exc.from_error(
+                nrpc_pb2.Error.FromString(rawRep.data[1:]))
         return alloptions__pb2.SimpleStringReply.FromString(rawRep.data)
 
     async def MtNoReply(
         self,
     ):
-        subject = (
-            PKG_SUBJECT
-            + "."
-            + self.pkg_instance
-            + "."
-            + SvcSubjectParams_SUBJECT
-            + "."
-            + self.svc_clientid
-            + "."
-            + "mtnoreply"
-        )
-        rawReq = b""
+        subject = PKG_SUBJECT + '.' + self.pkg_instance + '.' + SvcSubjectParams_SUBJECT + '.' + self.svc_clientid + '.' + 'mtnoreply'
+        rawReq = b''
 
         await self.nc.publish(subject, rawReq)
 
@@ -377,69 +252,43 @@ class SvcSubjectParamsClient:
         mp1,
         req,
     ):
-        subject = (
-            PKG_SUBJECT
-            + "."
-            + self.pkg_instance
-            + "."
-            + SvcSubjectParams_SUBJECT
-            + "."
-            + self.svc_clientid
-            + "."
-            + "mtnorequestwparams"
-            + "."
-            + mp1
-        )
+        subject = PKG_SUBJECT + '.' + self.pkg_instance + '.' + SvcSubjectParams_SUBJECT + '.' + self.svc_clientid + '.' + 'mtnorequestwparams' + '.' + mp1
         rawReq = req.SerializeToString()
 
-        rawRep = await self.nc.timed_request(subject, rawReq, 5)
+        rawRep = await self.nc.request(subject, rawReq, timeout=5)
         if rawRep.data and rawRep.data[0] == 0:
-            raise nrpc.exc.from_error(nrpc_pb2.Error.FromString(rawRep.data[1:]))
+            raise nrpc.exc.from_error(
+                nrpc_pb2.Error.FromString(rawRep.data[1:]))
         return alloptions__pb2.SimpleStringReply.FromString(rawRep.data)
 
 
-NoRequestService_SUBJECT = "norequestservice"
+NoRequestService_SUBJECT = 'norequestservice'
 NoRequestService_SUBJECT_PARAMS = []
 NoRequestService_SUBJECT_PARAMS_COUNT = 0
 
 
 class NoRequestServiceHandler:
     methods = {
-        "mtnorequest": (
-            "MtNoRequest",
-            0,
-            nrpc_dot_nrpc__pb2.NoRequest,
-            True,
-            False,
-            False,
-        ),
+        'mtnorequest': ('MtNoRequest', 0, nrpc_dot_nrpc__pb2.NoRequest, True, False, False),
     }
 
     def __init__(self, nc, server):
         self.nc = nc
         self.server = server
 
-    def subject(self, pkg_instance="*", method=">"):
-        return ".".join(["root", pkg_instance, NoRequestService_SUBJECT, method])
+    def subject(self, pkg_instance='*', method='>'):
+        return '.'.join([
+            "root", pkg_instance, NoRequestService_SUBJECT, method
+        ])
 
     async def handler(self, msg):
         try:
             pkg_params, svc_params, mt_subject, tail = nrpc.parse_subject(
-                PKG_SUBJECT,
-                PKG_SUBJECT_PARAMS_COUNT,
-                NoRequestService_SUBJECT,
-                NoRequestService_SUBJECT_PARAMS_COUNT,
-                msg.subject,
-            )
+                PKG_SUBJECT, PKG_SUBJECT_PARAMS_COUNT,
+                NoRequestService_SUBJECT, NoRequestService_SUBJECT_PARAMS_COUNT,
+                msg.subject)
 
-            (
-                mname,
-                params_count,
-                input_type,
-                has_reply,
-                void_reply,
-                streamed_reply,
-            ) = self.methods[mt_subject]
+            mname, params_count, input_type, has_reply, void_reply, streamed_reply = self.methods[mt_subject]
             mt_params, count = nrpc.parse_subject_tail(params_count, tail)
 
             method = getattr(self.server, mname)
@@ -448,9 +297,7 @@ class NoRequestServiceHandler:
                 mt_params.append(req)
             err = None
             if streamed_reply:
-                await nrpc.streamed_reply_handler(
-                    self.nc, msg.reply, method(*mt_params)
-                )
+                await nrpc.streamed_reply_handler(self.nc, msg.reply, method(*mt_params))
                 return
             try:
                 rep = await method(*mt_params)
@@ -463,27 +310,23 @@ class NoRequestServiceHandler:
                     err = rep
                 elif void_reply and rep is not None:
                     raise ValueError(
-                        "Method %s implementation should return None" % mname
-                    )
+                        "Method %s implementation should return None" % mname)
             if has_reply:
                 if err is not None:
-                    rawRep = b"\x00" + err.SerializeToString()
+                    rawRep = b'\x00' + err.SerializeToString()
                 elif rep is not None:
                     rawRep = rep.SerializeToString()
                 else:
-                    rawRep = b""
+                    rawRep = b''
                 await self.nc.publish(msg.reply, rawRep)
         except Exception as e:
-            import traceback
-
-            traceback.print_exc()
+            import traceback; traceback.print_exc()
             print("Error in NoRequestService.%s handler:" % mname, e)
 
 
 class NoRequestServiceClient:
     def __init__(
-        self,
-        nc,
+        self, nc,
         pkg_instance,
     ):
         self.nc = nc
@@ -493,18 +336,11 @@ class NoRequestServiceClient:
         self,
         req,
     ):
-        subject = (
-            PKG_SUBJECT
-            + "."
-            + self.pkg_instance
-            + "."
-            + NoRequestService_SUBJECT
-            + "."
-            + "mtnorequest"
-        )
+        subject = PKG_SUBJECT + '.' + self.pkg_instance + '.' + NoRequestService_SUBJECT + '.' + 'mtnorequest'
         rawReq = req.SerializeToString()
 
-        rawRep = await self.nc.timed_request(subject, rawReq, 5)
+        rawRep = await self.nc.request(subject, rawReq, timeout=5)
         if rawRep.data and rawRep.data[0] == 0:
-            raise nrpc.exc.from_error(nrpc_pb2.Error.FromString(rawRep.data[1:]))
+            raise nrpc.exc.from_error(
+                nrpc_pb2.Error.FromString(rawRep.data[1:]))
         return alloptions__pb2.SimpleStringReply.FromString(rawRep.data)

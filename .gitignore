@@ -1,3 +1,5 @@
 .pytest_cache
 __pycache__
 python_nrpc.egg-info
+build/
+dist/

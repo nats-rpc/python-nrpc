@@ -1,4 +1,4 @@
-import distutils.cmd
+import setuptools
 import subprocess
 
 from setuptools import setup
@@ -7,7 +7,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 
-class protoc(distutils.cmd.Command):
+class protoc(setuptools.Command):
     user_options = []
 
     def initialize_options(self):
@@ -41,5 +41,5 @@ setup(
     package_data={"nrpc": ["*.mako"]},
     cmdclass={"protoc": protoc},
     entry_points={"console_scripts": ["protoc-gen-pynrpc=nrpc.gen:main"]},
-    install_requires=["protobuf", "mako", "nats-py"],
+    install_requires=["protobuf<=3.20.3", "mako", "nats-py"],
 )

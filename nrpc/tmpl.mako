@@ -153,7 +153,7 @@ self.svc_${p} + '.' + \
             yield ${g.get_type(md.output_type)}.FromString(rawRep.data)
             % endif
       % else:
-        rawRep = await self.nc.timed_request(subject, rawReq, 5)
+        rawRep = await self.nc.request(subject, rawReq, timeout=5)
         if rawRep.data and rawRep.data[0] == 0:
             raise nrpc.exc.from_error(
                 nrpc_pb2.Error.FromString(rawRep.data[1:]))
