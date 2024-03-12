@@ -86,7 +86,7 @@ async def streamed_reply_request(nc, subject, req, timeout):
         inbox = nc.next_inbox()
     else:
         next_inbox = INBOX_PREFIX[:]
-        next_inbox.extend(nc._nuid.next())
+        next_inbox += nc._nuid.next()
         inbox = next_inbox.decode()
 
     heartbeat_subject = inbox + ".heartbeat"
@@ -107,7 +107,7 @@ async def streamed_reply_request(nc, subject, req, timeout):
 
     sid = await nc.subscribe(inbox, cb=handler)
     try:
-        await nc.publish_request(subject, inbox, req)
+        await nc.publish(subject, payload=req, reply=inbox)
 
         while True:
             msg = await asyncio.wait_for(msg_queue.get(), timeout)
@@ -125,7 +125,7 @@ async def streamed_reply_request(nc, subject, req, timeout):
             yield msg
     finally:
         heartbeat_task.cancel()
-        await nc.unsubscribe(sid)
+        await sid.unsubscribe()
         try:
             await heartbeat_task
         except asyncio.CancelledError:
@@ -152,7 +152,7 @@ async def heartbeat_listener(nc, subject, oncancel):
                 oncancel()
                 return
     finally:
-        await nc.unsubscribe(sid)
+        await sid.unsubscribe()
 
 
 async def wrap_gen(nc, inbox, async_gen):

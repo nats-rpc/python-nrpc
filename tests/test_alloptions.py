@@ -17,6 +17,7 @@ import alloptions_nrpc
 import alloptions_pb2
 import nrpc
 import pytest
+import pytest_asyncio
 from nats.aio.client import Client as NATS
 
 
@@ -35,12 +36,12 @@ class Server:
             raise nrpc.exc.ServerTooBusy("I am too busy")
 
     async def MtNoReply(self):
-        with await self.cond:
+        async with self.cond:
             self.noreply_hit += 1
             await self.cond.notify_all()
 
     async def wait_for_reply_hit(self, min_hit=1, timeout=1):
-        with await self.cond:
+        async with self.cond:
             await asyncio.wait_for(
                 self.cond.wait_for(
                     lambda: self.noreply_hit >= min_hit and self.noreply_hit
@@ -72,30 +73,30 @@ def nats_server():
         p.terminate()
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def nats(nats_server, event_loop):
     nc = NATS()
-    await nc.connect(servers=["nats://localhost:4242/"], io_loop=event_loop)
+    await nc.connect(servers=["nats://localhost:4242/"])
     try:
         yield nc
     finally:
         await nc.close()
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def asyncio_debug(event_loop):
     oldvalue = event_loop.get_debug()
     event_loop.set_debug(True)
-    initial_task_count = len(asyncio.Task.all_tasks(loop=event_loop))
+    initial_task_count = len(asyncio.all_tasks(loop=event_loop))
     try:
         yield event_loop
     finally:
         event_loop.set_debug(oldvalue)
-        task_count = len(asyncio.Task.all_tasks(loop=event_loop))
+        task_count = len(asyncio.all_tasks(loop=event_loop))
         assert initial_task_count == task_count
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def server(nats):
     server = Server()
     h1 = alloptions_nrpc.SvcCustomSubjectHandler(nats, server)
@@ -105,8 +106,8 @@ async def server(nats):
     try:
         yield server
     finally:
-        await nats.unsubscribe(s2)
-        await nats.unsubscribe(s1)
+        await s1.unsubscribe()
+        await s2.unsubscribe()
 
 
 @pytest.mark.asyncio
@@ -123,9 +124,7 @@ async def test_void_reply(event_loop, nats, server):
     assert r is None
 
     try:
-        r = await client.MtVoidReply(
-            alloptions_pb2.StringArg(arg1="please fail")
-        )
+        r = await client.MtVoidReply(alloptions_pb2.StringArg(arg1="please fail"))
     except nrpc.ClientError as e:
         assert e.message == "failed as requested"
     else:
@@ -137,9 +136,7 @@ async def test_server_too_busy(event_loop, nats, server):
     client = alloptions_nrpc.SvcCustomSubjectClient(nats, "default")
 
     with pytest.raises(nrpc.exc.ServerTooBusy) as excinfo:
-        await client.MtVoidReply(
-            alloptions_pb2.StringArg(arg1="you are too busy")
-        )
+        await client.MtVoidReply(alloptions_pb2.StringArg(arg1="you are too busy"))
     assert excinfo.value.message == "I am too busy"
 
 
@@ -156,7 +153,5 @@ async def test_streamed_reply(event_loop, nats, server, asyncio_debug):
     client = alloptions_nrpc.SvcCustomSubjectClient(nats, "default")
 
     for i in range(500):
-        async for r in client.MtStreamedReply(
-            alloptions_pb2.StringArg(arg1="hi")
-        ):
+        async for r in client.MtStreamedReply(alloptions_pb2.StringArg(arg1="hi")):
             assert r.reply == "hi"
