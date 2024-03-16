@@ -41,5 +41,5 @@ setup(
     package_data={"nrpc": ["*.mako"]},
     cmdclass={"protoc": protoc},
     entry_points={"console_scripts": ["protoc-gen-pynrpc=nrpc.gen:main"]},
-    install_requires=["protobuf<=3.20.3", "mako", "nats-py>=2.7"],
+    install_requires=["protobuf", "mako", "nats-py>=2.7"],
 )
