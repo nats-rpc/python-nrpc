@@ -74,7 +74,7 @@ def nats_server():
 
 
 @pytest_asyncio.fixture
-async def nats(nats_server, event_loop):
+async def nats(nats_server):
     nc = NATS()
     await nc.connect(servers=["nats://localhost:4242/"])
     try:
@@ -84,7 +84,8 @@ async def nats(nats_server, event_loop):
 
 
 @pytest_asyncio.fixture
-async def asyncio_debug(event_loop):
+async def asyncio_debug():
+    event_loop = asyncio.get_running_loop()
     oldvalue = event_loop.get_debug()
     event_loop.set_debug(True)
     initial_task_count = len(asyncio.all_tasks(loop=event_loop))
@@ -111,14 +112,14 @@ async def server(nats):
 
 
 @pytest.mark.asyncio
-async def test_simple_reply(event_loop, nats, server):
+async def test_simple_reply(nats, server):
     client = alloptions_nrpc.SvcCustomSubjectClient(nats, "default")
     r = await client.MtSimpleReply(alloptions_pb2.StringArg(arg1="hi"))
     assert r.reply == "hi"
 
 
 @pytest.mark.asyncio
-async def test_void_reply(event_loop, nats, server):
+async def test_void_reply(nats, server):
     client = alloptions_nrpc.SvcCustomSubjectClient(nats, "default")
     r = await client.MtVoidReply(alloptions_pb2.StringArg(arg1="hi"))
     assert r is None
@@ -132,7 +133,7 @@ async def test_void_reply(event_loop, nats, server):
 
 
 @pytest.mark.asyncio
-async def test_server_too_busy(event_loop, nats, server):
+async def test_server_too_busy(nats, server):
     client = alloptions_nrpc.SvcCustomSubjectClient(nats, "default")
 
     with pytest.raises(nrpc.exc.ServerTooBusy) as excinfo:
@@ -141,7 +142,7 @@ async def test_server_too_busy(event_loop, nats, server):
 
 
 @pytest.mark.asyncio
-async def test_no_reply(event_loop, nats, server):
+async def test_no_reply(nats, server):
     client = alloptions_nrpc.SvcSubjectParamsClient(nats, "default", "me")
 
     await client.MtNoReply()
@@ -149,7 +150,7 @@ async def test_no_reply(event_loop, nats, server):
 
 
 @pytest.mark.asyncio
-async def test_streamed_reply(event_loop, nats, server, asyncio_debug):
+async def test_streamed_reply(nats, server, asyncio_debug):
     client = alloptions_nrpc.SvcCustomSubjectClient(nats, "default")
 
     for i in range(500):
