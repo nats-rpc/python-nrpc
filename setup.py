@@ -33,7 +33,7 @@ class protoc(setuptools.Command):
 
 setup(
     name="python-nrpc",
-    version="0.0.6",
+    version="0.0.7",
     description="A python code generator and lib for Nats RPC",
     long_description=long_description,
     long_description_content_type="text/markdown",
