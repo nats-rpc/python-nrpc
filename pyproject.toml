@@ -1,0 +1,52 @@
+[project]
+name = "python-nrpc"
+version = "0.0.7"
+authors = [
+  { name="Christophe de Vienne", email="christophe.devienne@orbeet.io" },
+]
+description = "A python code generator and lib for Nats RPC"
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+license = "MIT"
+license-files = [
+    "LICENSE",
+]
+
+dependencies=["protobuf", "mako", "nats-py>=2.7"]
+
+[project.scripts]
+proto-gen-pynrpc = "nrpc.gen:main"
+
+[project.urls]
+Homepage = "https://github.com/nats-rpc/python-nrpc"
+Issues = "https://github.com/nats-rpc/python-nrpc/issues"
+
+[build-system]
+requires = ["setuptools >= 77.0.3"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.package-data]
+nrpc = ["*.mako", "*.proto"]
+
+[tool.black]
+line-length = 79
+exclude = '''
+/(
+    \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | \.eggs
+  | venv
+  | _build
+  | buck-out
+  | build
+  | dist
+  | migrations
+)/
+'''
