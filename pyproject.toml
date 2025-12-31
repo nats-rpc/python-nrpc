@@ -1,6 +1,6 @@
 [project]
 name = "python-nrpc"
-version = "0.0.7"
+version = "0.0.8"
 authors = [
   { name="Christophe de Vienne", email="christophe.devienne@orbeet.io" },
 ]
