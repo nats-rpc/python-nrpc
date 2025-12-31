@@ -39,5 +39,5 @@ Copy 'nrpc.proto' from the https://github.com/nats-rpc/nrpc project into the nrp
 Then, run the following command:
 
 ```bash
-python setup.py protoc
+sh protoc.sh
 ```
